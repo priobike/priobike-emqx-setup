@@ -1,0 +1,33 @@
+version: '3'
+services:
+  emqx:
+    image: emqx:latest
+    hostname: emqx{{.Task.Slot}}.local
+    networks:
+      - staging-network
+    deploy:
+      mode: replicated
+      replicas: 2
+    # Mount ACL
+    volumes:
+      - ./acl.conf:/opt/emqx/etc/acl.conf
+    environment:
+      - EMQX_CLUSTER__DISCOVERY_STRATEGY=static
+      - EMQX_NODE__NAME=emqx@emqx{{.Task.Slot}}.local
+      - EMQX_CLUSTER__STATIC__SEEDS=[emqx@emqx1.local,emqx@emqx2.local]
+      - MQTT_PORT=1883
+      - EMQX_DASHBOARD__DEFAULT_USERNAME=admin
+      - EMQX_DASHBOARD__DEFAULT_PASSWORD=secret
+
+  ubuntu:
+    image: ubuntu:latest
+    hostname: ubuntu
+    networks:
+      - staging-network
+    deploy:
+      mode: global
+    command: tail -f /dev/null
+
+networks:
+  staging-network:
+    driver: overlay
